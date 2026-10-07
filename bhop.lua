@@ -1,6 +1,8 @@
---// BHOP CONTROLLER
---// LocalScript
---// StarterPlayer > StarterPlayerScripts
+--==================================================
+-- KECAP H4KN - BHOP CONTROLLER
+-- Roblox Studio / LocalScript
+-- StarterPlayer > StarterPlayerScripts
+--==================================================
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -21,6 +23,9 @@ local hideGuiKey = Enum.KeyCode.RightShift
 local changingKey = false
 local spaceHeld = false
 local guiHidden = false
+local scriptClosed = false
+
+local connections = {}
 
 --==================================================
 -- CHARACTER
@@ -38,25 +43,24 @@ if player.Character then
 	setupCharacter(player.Character)
 end
 
-player.CharacterAdded:Connect(setupCharacter)
+connections.CharacterAdded = player.CharacterAdded:Connect(setupCharacter)
 
 --==================================================
 -- GUI
 --==================================================
 
 local gui = Instance.new("ScreenGui")
-gui.Name = "BhopHUD"
+gui.Name = "KecapH4KN_BhopHUD"
 gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = false
 gui.Parent = player:WaitForChild("PlayerGui")
 
 --==================================================
--- MAIN FRAME
+-- MAIN
 --==================================================
 
 local main = Instance.new("Frame")
 main.Name = "Main"
-main.Size = UDim2.fromOffset(260, 220)
+main.Size = UDim2.fromOffset(260, 225)
 main.Position = UDim2.new(0, 30, 0.5, -110)
 main.BackgroundColor3 = Color3.fromRGB(20, 22, 28)
 main.BorderSizePixel = 0
@@ -72,20 +76,16 @@ stroke.Thickness = 1
 stroke.Parent = main
 
 --==================================================
--- DRAG HEADER
+-- HEADER / DRAG AREA
 --==================================================
 
 local header = Instance.new("Frame")
 header.Name = "DragHeader"
-header.Size = UDim2.new(1, 0, 0, 45)
+header.Size = UDim2.new(1, -45, 0, 45)
 header.Position = UDim2.fromOffset(0, 0)
 header.BackgroundTransparency = 1
 header.Active = true
 header.Parent = main
-
---==================================================
--- TITLE
---==================================================
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -20, 0, 25)
@@ -108,6 +108,25 @@ dragInfo.Font = Enum.Font.Gotham
 dragInfo.TextSize = 9
 dragInfo.TextXAlignment = Enum.TextXAlignment.Left
 dragInfo.Parent = header
+
+--==================================================
+-- CLOSE BUTTON
+--==================================================
+
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.fromOffset(28, 28)
+closeButton.Position = UDim2.new(1, -36, 0, 8)
+closeButton.BackgroundColor3 = Color3.fromRGB(170, 55, 55)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Font = Enum.Font.GothamBold
+closeButton.TextSize = 13
+closeButton.Parent = main
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 7)
+closeCorner.Parent = closeButton
 
 --==================================================
 -- STATUS
@@ -143,7 +162,7 @@ toggleCorner.CornerRadius = UDim.new(0, 8)
 toggleCorner.Parent = toggleButton
 
 --==================================================
--- KEYBIND BUTTON
+-- KEYBIND
 --==================================================
 
 local keyButton = Instance.new("TextButton")
@@ -169,7 +188,7 @@ spaceButton.Size = UDim2.new(1, -20, 0, 30)
 spaceButton.Position = UDim2.fromOffset(10, 148)
 spaceButton.BackgroundColor3 = Color3.fromRGB(35, 38, 47)
 spaceButton.Text = "SPACE ASSIST : ON"
-spaceButton.TextColor3 = Color3.fromRGB(210, 215, 225)
+spaceButton.TextColor3 = Color3.fromRGB(120, 230, 160)
 spaceButton.Font = Enum.Font.GothamMedium
 spaceButton.TextSize = 12
 spaceButton.Parent = main
@@ -179,14 +198,14 @@ spaceCorner.CornerRadius = UDim.new(0, 8)
 spaceCorner.Parent = spaceButton
 
 --==================================================
--- HIDE GUI INFO
+-- INFO
 --==================================================
 
 local hideInfo = Instance.new("TextLabel")
-hideInfo.Size = UDim2.new(1, -20, 0, 25)
-hideInfo.Position = UDim2.fromOffset(10, 184)
+hideInfo.Size = UDim2.new(1, -20, 0, 18)
+hideInfo.Position = UDim2.fromOffset(10, 180)
 hideInfo.BackgroundTransparency = 1
-hideInfo.Text = "HIDE GUI  :  RIGHT SHIFT"
+hideInfo.Text = "HIDE GUI : RIGHT SHIFT"
 hideInfo.TextColor3 = Color3.fromRGB(130, 135, 150)
 hideInfo.Font = Enum.Font.GothamMedium
 hideInfo.TextSize = 10
@@ -194,12 +213,12 @@ hideInfo.TextXAlignment = Enum.TextXAlignment.Center
 hideInfo.Parent = main
 
 --==================================================
--- CREATOR / BRANDING
+-- CREATOR
 --==================================================
 
 local creator = Instance.new("TextLabel")
 creator.Size = UDim2.new(1, -20, 0, 18)
-creator.Position = UDim2.fromOffset(10, 198)
+creator.Position = UDim2.fromOffset(10, 199)
 creator.BackgroundTransparency = 1
 creator.Text = "MADE BY KECAP H4KN"
 creator.TextColor3 = Color3.fromRGB(90, 95, 110)
@@ -213,6 +232,10 @@ creator.Parent = main
 --==================================================
 
 local function updateHUD()
+
+	if scriptClosed then
+		return
+	end
 
 	if bhopEnabled then
 		status.Text = "●  BHOP : ON"
@@ -238,7 +261,7 @@ local function updateHUD()
 		spaceButton.TextColor3 = Color3.fromRGB(210, 215, 225)
 	end
 
-	hideInfo.Text = "HIDE GUI  :  RIGHT SHIFT"
+	hideInfo.Text = "HIDE GUI : RIGHT SHIFT"
 end
 
 --==================================================
@@ -246,28 +269,40 @@ end
 --==================================================
 
 local function toggleBhop()
+
+	if scriptClosed then
+		return
+	end
+
 	bhopEnabled = not bhopEnabled
 	updateHUD()
+
 end
 
-toggleButton.MouseButton1Click:Connect(toggleBhop)
+connections.ToggleButton = toggleButton.MouseButton1Click:Connect(toggleBhop)
 
 --==================================================
--- SPACE ASSIST TOGGLE
+-- SPACE ASSIST
 --==================================================
 
-spaceButton.MouseButton1Click:Connect(function()
+connections.SpaceButton = spaceButton.MouseButton1Click:Connect(function()
+
+	if scriptClosed then
+		return
+	end
+
 	spaceAssistEnabled = not spaceAssistEnabled
 	updateHUD()
+
 end)
 
 --==================================================
 -- CHANGE KEYBIND
 --==================================================
 
-keyButton.MouseButton1Click:Connect(function()
+connections.KeyButton = keyButton.MouseButton1Click:Connect(function()
 
-	if changingKey then
+	if scriptClosed or changingKey then
 		return
 	end
 
@@ -275,35 +310,64 @@ keyButton.MouseButton1Click:Connect(function()
 
 	keyButton.Text = "PRESS A KEY..."
 	keyButton.BackgroundColor3 = Color3.fromRGB(120, 95, 35)
+
 end)
 
 --==================================================
--- HIDE / SHOW GUI
+-- CLOSE / CLEANUP
 --==================================================
 
-local function toggleGUI()
+local function closeScript()
 
-	guiHidden = not guiHidden
+	if scriptClosed then
+		return
+	end
 
-	if guiHidden then
-		main.Visible = false
-	else
-		main.Visible = true
+	scriptClosed = true
+
+	-- Matikan fitur
+	bhopEnabled = false
+	spaceAssistEnabled = false
+	spaceHeld = false
+	changingKey = false
+
+	-- Disconnect semua connection
+	for _, connection in pairs(connections) do
+		if connection and connection.Connected then
+			connection:Disconnect()
+		end
+	end
+
+	table.clear(connections)
+
+	-- Hapus GUI
+	if gui then
+		gui:Destroy()
+		gui = nil
 	end
 
 end
+
+connections.CloseButton = closeButton.MouseButton1Click:Connect(closeScript)
 
 --==================================================
 -- INPUT
 --==================================================
 
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
+connections.InputBegan = UserInputService.InputBegan:Connect(function(input, gameProcessed)
 
-	-- Right Shift selalu bisa membuka/menutup HUD
+	if scriptClosed then
+		return
+	end
+
+	-- Right Shift = Hide / Show
 	if input.UserInputType == Enum.UserInputType.Keyboard then
 
 		if input.KeyCode == hideGuiKey then
-			toggleGUI()
+
+			guiHidden = not guiHidden
+			main.Visible = not guiHidden
+
 			return
 		end
 
@@ -314,13 +378,14 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 
 	--==================================================
-	-- CHANGE KEYBIND
+	-- CHANGE KEY
 	--==================================================
 
 	if changingKey then
 
 		if input.UserInputType == Enum.UserInputType.Keyboard then
 
+			-- ESC = batal
 			if input.KeyCode == Enum.KeyCode.Escape then
 
 				changingKey = false
@@ -331,7 +396,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 				return
 			end
 
-			-- Space tidak digunakan sebagai toggle key
+			-- Hindari Space dan Right Shift
 			if input.KeyCode ~= Enum.KeyCode.Space
 				and input.KeyCode ~= hideGuiKey then
 
@@ -342,6 +407,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 				keyButton.BackgroundColor3 = Color3.fromRGB(35, 38, 47)
 
 				updateHUD()
+
 			end
 
 		end
@@ -350,11 +416,12 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 
 	--==================================================
-	-- BHOP KEY
+	-- NORMAL INPUT
 	--==================================================
 
 	if input.UserInputType == Enum.UserInputType.Keyboard then
 
+		-- Toggle Bhop
 		if input.KeyCode == toggleKey then
 			toggleBhop()
 			return
@@ -373,7 +440,11 @@ end)
 -- INPUT ENDED
 --==================================================
 
-UserInputService.InputEnded:Connect(function(input)
+connections.InputEnded = UserInputService.InputEnded:Connect(function(input)
+
+	if scriptClosed then
+		return
+	end
 
 	if input.KeyCode == Enum.KeyCode.Space then
 		spaceHeld = false
@@ -389,7 +460,11 @@ local dragging = false
 local dragStart
 local startPosition
 
-header.InputBegan:Connect(function(input)
+connections.DragStart = header.InputBegan:Connect(function(input)
+
+	if scriptClosed then
+		return
+	end
 
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 
@@ -401,7 +476,7 @@ header.InputBegan:Connect(function(input)
 
 end)
 
-header.InputEnded:Connect(function(input)
+connections.DragEnd = header.InputEnded:Connect(function(input)
 
 	if input.UserInputType == Enum.UserInputType.MouseButton1 then
 		dragging = false
@@ -409,7 +484,11 @@ header.InputEnded:Connect(function(input)
 
 end)
 
-UserInputService.InputChanged:Connect(function(input)
+connections.DragMove = UserInputService.InputChanged:Connect(function(input)
+
+	if scriptClosed then
+		return
+	end
 
 	if not dragging then
 		return
@@ -434,7 +513,11 @@ end)
 -- BHOP LOOP
 --==================================================
 
-RunService.RenderStepped:Connect(function()
+connections.BhopLoop = RunService.RenderStepped:Connect(function()
+
+	if scriptClosed then
+		return
+	end
 
 	if not bhopEnabled then
 		return
@@ -473,7 +556,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 --==================================================
--- START
+-- INITIALIZE
 --==================================================
 
 updateHUD()
